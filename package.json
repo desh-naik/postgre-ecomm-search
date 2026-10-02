@@ -1,0 +1,15 @@
+{
+  "name": "postgre-ecomm-search",
+  "private": true,
+  "description": "Natural-language product search for small e-commerce stores, inside Postgres (Supabase + pgvector + pg_trgm)",
+  "scripts": {
+    "seed:generate": "node scripts/generate-seed.mjs",
+    "db:push": "supabase db push --include-seed",
+    "functions:deploy": "supabase functions deploy search && supabase functions deploy embed-worker",
+    "backfill": "node --env-file=.env scripts/backfill.mjs",
+    "dev": "npm --prefix web run dev"
+  },
+  "devDependencies": {
+    "supabase": "^2.119.0"
+  }
+}
