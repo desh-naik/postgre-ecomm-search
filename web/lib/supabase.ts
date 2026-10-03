@@ -8,6 +8,13 @@ export const isConfigured = Boolean(url && key);
 
 export const supabase = createClient(url ?? "http://localhost", key ?? "missing");
 
+// products.image_url is a path in the public "product-images" bucket (or a full URL).
+export function imageUrl(path: string | null): string | null {
+  if (!path) return null;
+  if (/^https?:\/\//.test(path)) return path;
+  return supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
+}
+
 // Keystroke path: straight to Postgres (pg_trgm + prefix FTS), no Edge Function.
 export async function autocomplete(prefix: string): Promise<Suggestion[]> {
   const { data, error } = await supabase.rpc("autocomplete", { prefix, limit_count: 6 });

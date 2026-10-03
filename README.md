@@ -167,8 +167,10 @@ supabase/
   migrations/      schema, search index, parser, search functions, worker + cron
   functions/       search (public API), embed-worker (cron target)
   seed.sql         generated demo catalog (478 Indian fashion products)
+  images/products/ one generated SVG illustration per product (Storage bucket seed)
 scripts/
-  generate-seed.mjs  regenerate seed.sql
+  generate-seed.mjs  regenerate seed.sql and the product images
+  product-art.mjs    draws each product from its category, pattern and colors
   backfill.mjs       drain the embedding queue quickly after a bulk import
 web/               Next.js demo store with the autocomplete dropdown
 ```
@@ -188,6 +190,10 @@ You need Node 20+ and a Supabase project.
 2. **Create the schema and load the demo catalog:**
    ```bash
    npm run db:push
+   ```
+   Then upload the product images to the public `product-images` Storage bucket:
+   ```bash
+   npx supabase seed buckets --project-ref YOUR-PROJECT-REF
    ```
 
 3. **Pick a worker secret** (any long random string) and give it to the Edge Functions:
@@ -223,6 +229,12 @@ The whole stack runs locally, including gte-small, pg_cron and Vault:
 
 ```bash
 npx supabase start
+```
+
+Upload the product images to local Storage:
+
+```bash
+npm run images:upload
 ```
 
 Create `supabase/functions/.env` containing `EMBED_WORKER_SECRET=local-test-secret`, then run:

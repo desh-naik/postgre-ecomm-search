@@ -1,9 +1,12 @@
 // Generates supabase/seed.sql: a deterministic Indian fashion catalog
-// spread across brands, categories, products, variants and attributes.
+// spread across brands, categories, products, variants and attributes,
+// plus one SVG illustration per product in supabase/images/products/
+// (uploaded to the "product-images" Storage bucket, see config.toml).
 //   node scripts/generate-seed.mjs [productCount]
-import { writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { productSvg } from "./product-art.mjs";
 
 const TARGET = Number(process.argv[2]) || 480;
 
@@ -315,6 +318,8 @@ for (const t of templates) {
       id, name, slug, desc, brand_id: brandId[brand], category_id: catId[`${t.parent}>${t.cat}`], gender: t.gender,
       price, mrp, rating: (3 + rand() * 2).toFixed(1), rating_count: between(0, 2500),
       popularity: Math.floor(Math.pow(rand(), 3) * 10000),
+      image_url: `${slug}.svg`,
+      art: { cat: t.cat, gender: t.gender, noun, pattern, material, colors },
     });
 
     attributes.push([id, "material", material], [id, "pattern", pattern]);
@@ -332,7 +337,7 @@ for (const t of templates) {
 }
 
 for (const p of products) {
-  out.push(`insert into public.products (id, name, slug, description, brand_id, category_id, gender, price, mrp, rating, rating_count, popularity) values (${p.id}, ${sql(p.name)}, ${sql(p.slug)}, ${sql(p.desc)}, ${p.brand_id}, ${p.category_id}, ${sql(p.gender)}, ${p.price}, ${sql(p.mrp)}, ${p.rating}, ${p.rating_count}, ${p.popularity});`);
+  out.push(`insert into public.products (id, name, slug, description, brand_id, category_id, gender, price, mrp, rating, rating_count, popularity, image_url) values (${p.id}, ${sql(p.name)}, ${sql(p.slug)}, ${sql(p.desc)}, ${p.brand_id}, ${p.category_id}, ${sql(p.gender)}, ${p.price}, ${sql(p.mrp)}, ${p.rating}, ${p.rating_count}, ${p.popularity}, ${sql(p.image_url)});`);
 }
 
 const chunk = (arr, n) => Array.from({ length: Math.ceil(arr.length / n) }, (_, i) => arr.slice(i * n, i * n + n));
@@ -352,6 +357,13 @@ for (const table of ["brands", "categories", "products", "product_variants"]) {
 out.push("select search.refresh_all();");
 out.push("commit;");
 
-const target = join(dirname(fileURLToPath(import.meta.url)), "..", "supabase", "seed.sql");
-writeFileSync(target, out.join("\n") + "\n");
-console.log(`seed.sql: ${brands.length} brands, ${categories.length} categories, ${products.length} products, ${variants.length} variants, ${attributes.length} attributes`);
+const supabaseDir = join(dirname(fileURLToPath(import.meta.url)), "..", "supabase");
+writeFileSync(join(supabaseDir, "seed.sql"), out.join("\n") + "\n");
+
+// image_url holds the object path inside the "product-images" bucket.
+const imageDir = join(supabaseDir, "images", "products");
+rmSync(imageDir, { recursive: true, force: true });
+mkdirSync(imageDir, { recursive: true });
+for (const p of products) writeFileSync(join(imageDir, p.image_url), productSvg(p.art));
+
+console.log(`${products.length} images in supabase/images/products, seed.sql: ${brands.length} brands, ${categories.length} categories, ${products.length} products, ${variants.length} variants, ${attributes.length} attributes`);

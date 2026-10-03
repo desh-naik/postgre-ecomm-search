@@ -1,3 +1,4 @@
+import { imageUrl } from "@/lib/supabase";
 import type { Product } from "@/lib/types";
 
 const SWATCHES: Record<string, string> = {
@@ -19,6 +20,7 @@ export function formatPrice(n: number) {
 export default function ProductCard({ p, debug }: { p: Product; debug: boolean }) {
   const colors = p.colors ?? [];
   const discount = p.mrp && p.mrp > p.price ? Math.round((1 - p.price / p.mrp) * 100) : 0;
+  const src = imageUrl(p.image_url);
 
   return (
     <article className={`card ${p.in_stock ? "" : "oos"}`}>
@@ -30,6 +32,7 @@ export default function ProductCard({ p, debug }: { p: Product; debug: boolean }
             : colorSwatch(colors[0]),
         }}
       >
+        {src && <img src={src} alt={p.name} loading="lazy" />}
         <span className="card-category">{p.category}</span>
         {!p.in_stock && <span className="badge-oos">Out of stock</span>}
       </div>

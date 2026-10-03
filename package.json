@@ -5,6 +5,7 @@
   "scripts": {
     "seed:generate": "node scripts/generate-seed.mjs",
     "db:push": "supabase db push --include-seed",
+    "images:upload": "supabase seed buckets",
     "functions:deploy": "supabase functions deploy search && supabase functions deploy embed-worker",
     "backfill": "node --env-file=.env scripts/backfill.mjs",
     "dev": "npm --prefix web run dev"
